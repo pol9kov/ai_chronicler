@@ -1,7 +1,5 @@
-# виртуалки
+venv/
 .venv/
-
-# модели / данные
 models/
 data/
 logs/
@@ -9,9 +7,5 @@ logs/
 *.safetensors
 *.bin
 *.pt
-
-# heavy dirs
 llama.cpp/
-site-packages/
-
-.idea/
+models/llama-3-8b-instruct-hf/
