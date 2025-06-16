@@ -1,0 +1,8 @@
+version: "3.9"
+services:
+  api:
+    build: .
+    ports: ["8000:8000"]
+    volumes:
+      - ./models:/app/models
+      - ~/Obsidian:/vault:ro      # 👉 твой Obsidian-вольт внутрь контейнера
