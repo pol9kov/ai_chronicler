@@ -1,0 +1,14 @@
+vault_path: /Users/egorpolyakov/Obsidian/Main
+journal_dir: 07_ИИ
+git_repo: https://github.com/pol9kov/obsidian.git
+branch: main
+timezone: America/Argentina/Buenos_Aires
+
+llm:
+  backend: llama_local
+  local_model_path: models/tinyllama-1.1b-chat-v1.0.Q8_0.gguf
+
+vector:
+  backend: chroma
+  embed_model: all-MiniLM-L6-v2
+  index_path: data/index

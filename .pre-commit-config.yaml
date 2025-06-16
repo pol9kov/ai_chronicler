@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: check-python-version
+        name: Check Python Version
+        entry: bash -c "python --version | grep -E '^Python 3\\.11'"
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

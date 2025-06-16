@@ -1,0 +1,17 @@
+# виртуалки
+.venv/
+
+# модели / данные
+models/
+data/
+logs/
+*.gguf
+*.safetensors
+*.bin
+*.pt
+
+# heavy dirs
+llama.cpp/
+site-packages/
+
+.idea/
