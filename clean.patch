@@ -1,0 +1,111 @@
+diff --git a/.gitignore b/.gitignore
+@@
++# ─── virtual envs ───────────────────────────────────────────────
++venv/
++.venv/
++
++# ─── heavy artefacts (не храним в git) ──────────────────────────
++models/
++data/
++logs/
++*.gguf
++*.safetensors
++*.bin
++*.pt
++
++# ─── embedded repos ─────────────────────────────────────────────
++llama.cpp/
+
+diff --git a/scripts/prepare_dataset.py b/scripts/prepare_dataset.py
+@@
+-import os, argparse, pathlib
+-root = pathlib.Path(os.environ["PROJECT_ROOT"])
+-os.chdir(root)
++import pathlib, argparse, os
++root = pathlib.Path(__file__).resolve().parents[1]   # корень проекта
++os.chdir(root)
+@@
+-TAG = "#Для_ИИ_помощника"
++# ищем тег в ЛЮБОЙ строке файла (без жёсткой привязки к YAML-front-matter)
++import re
++TAG_RE = re.compile(r'^#\s*Для_ИИ_помощника', re.I)
+
+-        if TAG in txt:
++        if TAG_RE.search(txt):
+             out.write(json.dumps({"text": txt}, ensure_ascii=False) + "\n")
+             count += 1
+
+diff --git a/scripts/train_lora.py b/scripts/train_lora.py
+@@
+-parser = argparse.ArgumentParser()
+-parser.add_argument("--base-model", required=True)
+-parser.add_argument("--data", required=True)
+-parser.add_argument("--output", required=True)
+-parser.add_argument("--output", required=True)
++parser = argparse.ArgumentParser(
++    description="TinyLoRA finetune without env-vars"
++)
++parser.add_argument("--base",   required=True, help="HF model dir or repo id")
++parser.add_argument("--data",   required=True, help="train.jsonl")
++parser.add_argument("--out",    required=True, help="where to save LoRA")
++parser.add_argument("--tiny",   action="store_true", help="q_proj / v_proj only")
++parser.add_argument("--fp16",   action="store_true", help="use fp16 training")
+
+-MODEL      = args.base_model
+-DATA  = args.data
+-OUT    = args.output
++MODEL = args.base
++DATA  = args.data
++OUT   = args.out
+@@
+-tokenizer = AutoTokenizer.from_pretrained(MODEL, use_fast=False)
+-model     = AutoModelForCausalLM.from_pretrained(MODEL, load_in_4bit=True, device_map="auto")
++# fp16 — на Mac ARM помещается в ≈14 GB; 4-bit требует bitsandbytes, на ARM нет
++tokenizer = AutoTokenizer.from_pretrained(MODEL, use_fast=False)
++model     = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype="auto")
+@@
+-lora_cfg = LoraConfig(
+-    r=8, lora_alpha=16, target_modules=["q_proj","v_proj"],
+-    inference_mode=False, bias="none"
+-)
++# Tiny-LoRA — только q_proj / v_proj; полный вариант, если `--tiny` НЕ указан
++targets = ["q_proj","v_proj"] if args.tiny else ["q_proj","v_proj","k_proj","o_proj"]
++lora_cfg = LoraConfig(r=8, lora_alpha=16, target_modules=targets,
++                      inference_mode=False, bias="none")
+
+-training_args = TrainingArguments(
+-    output_dir=OUT,
+-    num_train_epochs=3,
+-    per_device_train_batch_size=1,
+-    gradient_accumulation_steps=4,
+-    logging_steps=50,
+-    fp16=True,
+-    save_total_limit=1,
+-    save_strategy="epoch",
+-)
++training_args = TrainingArguments(
++    output_dir=OUT,
++    num_train_epochs=3,
++    per_device_train_batch_size=1,
++    gradient_accumulation_steps=4,
++    logging_steps=50,
++    fp16=args.fp16,
++    save_total_limit=1,
++    save_strategy="epoch",
++)
+
+diff --git a/.pre-commit-config.yaml b/.pre-commit-config.yaml
++repos:
++  - repo: https://github.com/psf/black
++    rev: 24.3.0
++    hooks:
++      - id: black
++        language_version: python3.11
++  - repo: https://github.com/PyCQA/ruff-pre-commit
++    rev: v0.4.6
++    hooks:
++      - id: ruff
++
++# запуск:
++#   pip install pre-commit
++#   pre-commit install
